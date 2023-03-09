@@ -14,7 +14,7 @@ class AE(nn.Module):
     def __init__(self):
         super().__init__()
 
-        #=== Encoder Resnet34 Block ===
+        #=== Encoder Block ===
         enresidualblock = self.EncoderResidualBlock
         self.eblock1 = nn.Sequential(
             nn.BatchNorm2d(5),
@@ -52,9 +52,9 @@ class AE(nn.Module):
         self.efc = nn.Sequential(
             nn.Linear(47472,1)
         )
-        #=== Encoder Resnet34 Block ===
+        #=== Encoder Block ===
 
-        #=== Decoder Resnet34 Block ===
+        #=== Decoder Block ===
         deresidualblock = self.DecoderResidualBlock
         self.dfc = nn.Sequential(
             nn.Linear(1,47472)
@@ -92,7 +92,7 @@ class AE(nn.Module):
             nn.ReLU(True),
             nn.ConvTranspose2d(256,5,stride=2,kernel_size=3,padding=3,bias=True)
         )
-        #=== Decoder Resnet34 Block ===
+        #=== Decoder Block ===
 
     class EncoderResidualBlock(nn.Module):
         def __init__(self,in_features,out_features,stride=1,kernel_size=3,padding=1,bias=False):
