@@ -8,3 +8,6 @@
 
 ## GPU
 - NVIDIA A100
+
+# Step
+1. decompress data file > path = /NACA0015test/work/data.tar.gz
