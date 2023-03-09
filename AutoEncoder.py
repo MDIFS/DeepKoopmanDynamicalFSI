@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import matplotlib.pyplot as plt
 import numpy as np
+import configparser
 
 import torch
 import torch.nn as nn
@@ -13,8 +14,11 @@ from readwritePLOT3D import checkheader, readgrid, writegrid, \
 class AE(nn.Module):
     def __init__(self):
         super().__init__()
+        setup = configparser.ConfigParser()
+        setup.read('input.ini')
+        fc_features = int(setup['DeepLearning']['full_connected'])
 
-        #=== Encoder Block ===
+        #=== Encoder  ===
         enresidualblock = self.EncoderResidualBlock
         self.eblock1 = nn.Sequential(
             nn.BatchNorm2d(5),
@@ -22,7 +26,6 @@ class AE(nn.Module):
             nn.Conv2d(5,256,kernel_size=3,stride=2,padding=1,bias=True)
         )
         self.eblock2 = nn.Sequential(
-            # nn.MaxPool2d(1,1),
             enresidualblock(256,256)
         )
         self.eblock23 = nn.Sequential(
@@ -50,14 +53,14 @@ class AE(nn.Module):
             enresidualblock(16,16)
         )
         self.efc = nn.Sequential(
-            nn.Linear(47472,1)
+            nn.Linear(fc_features,1)
         )
         #=== Encoder Block ===
 
         #=== Decoder Block ===
         deresidualblock = self.DecoderResidualBlock
         self.dfc = nn.Sequential(
-            nn.Linear(1,47472)
+            nn.Linear(1,fc_features)
         )
         self.dblock6 = nn.Sequential(
             enresidualblock(16,16)
@@ -84,7 +87,6 @@ class AE(nn.Module):
             nn.ConvTranspose2d(128,256,stride=1,kernel_size=3,padding=1,bias=True)
         )
         self.dblock2 = nn.Sequential(
-            # nn.MaxPool2d(1,1),
             enresidualblock(256,256)
         )
         self.dblock1 = nn.Sequential(

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import matplotlib.pyplot as plt
 import numpy as np
+import configparser
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+
 from torchsummary import summary
 from AutoEncoder import AE,Identity,DataIO,FlowDataset,CustomLoss
 
@@ -15,32 +17,27 @@ torch.manual_seed(seed)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
-"""We set the batch size, the number of training epochs, and the learning rate."""
-epochs =10000
-learning_rate = 7.5e-4
-optthresh = 1.e-5
-target_loss  = 1.1e-2
+""" read config file """
+setup = configparser.ConfigParser()
+setup.read('input.ini')
+epochs = int(setup['DeepLearning']['epochs'])
+learning_rate = float(setup['DeepLearning']['learning_rate'])
+optthresh = float(setup['DeepLearning']['optthresh'])
+target_loss  = float(setup['DeepLearning']['target_loss'])
+
 """We set the preference about the CFD"""
-dt  = 1.e-3
-mach= 0.2
-iz  = 1 
+dt  = float(setup['CFD']['dt'])
+mach= float(setup['CFD']['mach'])
+iz  = int(setup['CFD']['iz'])
+
 """We set the start step, the last step, the intervals"""
-nst = 12500
-nls = 15000
-nin = 10
+nst = int(setup['CFD']['nst'])
+nls = int(setup['CFD']['nls'])
+nin = int(setup['CFD']['nin'])
 
-"""Before using our defined autoencoder class, we have the following things to do:
-    1. We configure which device we want to run on.
-    2. We instantiate an `AE` object.
-    3. We define our optimizer.
-    4. We define our reconstruction loss.
-"""
-
-"""## Dataset
-We load our MNIST dataset using the `torchvision` package. 
-"""
-gpaths = "NACA0015set/work/grid.01"
-fpaths = "NACA0015set/work/data/"
+""" Dataset"""
+gpaths = setup['CFD']['gpaths']
+fpaths = setup['CFD']['fpaths']
 dataio = DataIO(nst,nls,nin,gpaths,fpaths,iz)
 
 grids,ibottom = dataio.readgrid()
@@ -69,7 +66,6 @@ model = AE().to(device)
 # model = Identity().to(device) # for debbug
 
 # create an optimizer object
-# Adam optimizer with learning rate 1e-3
 optimizer = optim.Adam(model.parameters(),\
                        lr=learning_rate,\
                        eps=1e-3,\

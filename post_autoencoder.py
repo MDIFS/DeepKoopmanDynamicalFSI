@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import configparser
 
 import torch
 import torch.nn as nn
@@ -15,24 +16,27 @@ torch.manual_seed(seed)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
-"""We set the batch size, the number of training epochs, and the learning rate."""
-batch_size = 16
-learning_rate = 1e-3
+""" read config file """
+setup = configparser.ConfigParser()
+setup.read('input.ini')
+epochs = int(setup['DeepLearning']['epochs'])
+learning_rate = float(setup['DeepLearning']['learning_rate'])
+optthresh = float(setup['DeepLearning']['optthresh'])
+target_loss  = float(setup['DeepLearning']['target_loss'])
 
 """We set the preference about the CFD"""
-dt  = 1.e-3
-mach= 0.2
-iz  = 1
-"""We set the start step, the last step, the intervals"""
-nst = 14000
-nls = 15000
-nin = 10
+dt  = float(setup['CFD']['dt'])
+mach= float(setup['CFD']['mach'])
+iz  = int(setup['CFD']['iz'])
 
-"""## Dataset
-We load our MNIST dataset using the `torchvision` package.
-"""
-gpaths = "NACA0015set/work/grid.01"
-fpaths = "NACA0015set/work/data/"
+"""We set the start step, the last step, the intervals"""
+nst = int(setup['CFD']['nst'])
+nls = int(setup['CFD']['nls'])
+nin = int(setup['CFD']['nin'])
+
+""" Dataset """
+gpaths = setup['CFD']['gpaths']
+fpaths = setup['CFD']['fpaths']
 dataio = DataIO(nst,nls,nin,gpaths,fpaths,iz)
 
 grids,ibottom = dataio.readgrid()
@@ -90,10 +94,10 @@ with torch.no_grad():
     nstepall = np.arange(nst,nls,nin)
 
     # write grid
-    # out_gfiles = [
-    #     './grid_z0001'
-    # ]
-    # dataio.writegrid(out_gfiles,grids,jcuts,kcuts,lcuts)
+    out_gfiles = [
+        './grid_z0001'
+    ]
+    dataio.writegrid(out_gfiles,grids,jcuts,kcuts,lcuts)
 
     # write flow
     statedic = []
@@ -103,4 +107,3 @@ with torch.no_grad():
         q  = reconstruction[i][0].cpu().numpy()
 
         dataio.writeflow(fname,q,jcuts,kcuts,lcuts)
-exit()
