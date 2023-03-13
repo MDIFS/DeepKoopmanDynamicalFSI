@@ -23,7 +23,7 @@ epochs = int(setup['DeepLearning']['epochs'])
 learning_rate = float(setup['DeepLearning']['learning_rate'])
 optthresh = float(setup['DeepLearning']['optthresh'])
 target_loss  = float(setup['DeepLearning']['target_loss'])
-
+batch_size = int(setup['DeepLearning']['batchsize'])
 """We set the preference about the CFD"""
 dt  = float(setup['CFD']['dt'])
 mach= float(setup['CFD']['mach'])
@@ -56,32 +56,49 @@ transform = torchvision.transforms.Compose([
 
 test_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,transform)
 
+test_loader = torch.utils.data.DataLoader(
+    test_dataset,batch_size=batch_size,shuffle=None,drop_last=True
+)
 print('Start Testing\n')
 
 """ Load models """ 
 model = torch.load("train_model")
 
 with torch.no_grad():
-    batches_list = [batch[0].to(torch.float32).to('cuda') for batch in test_dataset]
+    num_batches = 0
+    orgdatas = []
+    for test,_ in test_loader:
+        num_batches += 1
+        orgdatas.append(test)
 
-    # add new axis
-    for i,batch in enumerate(batches_list):
-        batches_list[i] = batch[None]
-        
-    reconstruction = model(batches_list)
+    batch = orgdatas[0]
+    batch = batch.to(torch.float32).to('cuda')
 
-    # Calc recreated error
+    reconstruction = []
+    for i in range(num_batches):
+        out = model(batch)
+        ind_half = int(out.size(0)/2)
+
+        X_prd = out[:(ind_half+1)]
+
+        reconstruction.append(X_prd)
+        batch = X_prd
+
+    """ Calc recreated error """
     recerrors = []
-    for i,batch in enumerate(reconstruction):
-        recdata = reconstruction[i].cpu().numpy()
-        orgdata = batches_list[i].cpu().numpy() 
+    for i,Y_prd in enumerate(reconstruction):
 
-        # data shape = (Batch * channels * height * width)
+        recdata = Y_prd.cpu().numpy()
+        orgdata = orgdatas[i].cpu().numpy() 
+
+        # data shape = (batch * channels * height * width)
         error_norm = np.linalg.norm(recdata-orgdata,axis=1,ord=1)
         org_norm = np.linalg.norm(orgdata,axis=1,ord=1)
-        
+
         recerror = error_norm/org_norm
+
         recerrors.append(recerror)
+
 
     f = open('recerrors.pickle', 'wb')
     pickle.dump(recerrors, f)
@@ -91,7 +108,7 @@ Let's try to reconstruct some test images using our trained autoencoder.
 """
 print('Post')
 with torch.no_grad():
-    nstepall = np.arange(nst,nls,nin)
+    nstepall = np.arange(nst+nin,nls,nin)
 
     # write grid
     out_gfiles = [
@@ -101,9 +118,11 @@ with torch.no_grad():
 
     # write flow
     statedic = []
-    
-    for i, step in enumerate(nstepall[:-1]):
-        fname = 'recflows/recflow_z{:0=2}_{:0=8}'.format(iz,step)
-        q  = reconstruction[i][0].cpu().numpy()
 
-        dataio.writeflow(fname,q,jcuts,kcuts,lcuts)
+    for i in range(num_batches):
+        batches = reconstruction[i]
+        for step in range(batches.size(0)):
+            fname = 'recflows/recflow_z{:0=2}_{:0=8}'.format(iz,i*batches.size(0)+step)
+    
+            q  = batches[i].cpu().numpy()
+            dataio.writeflow(fname,q,jcuts,kcuts,lcuts)

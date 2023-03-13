@@ -17,7 +17,7 @@ class AE(nn.Module):
         setup = configparser.ConfigParser()
         setup.read('input.ini')
         fc_features = int(setup['DeepLearning']['full_connected'])
-
+        
         #=== Encoder  ===
         enresidualblock = self.EncoderResidualBlock
         self.eblock1 = nn.Sequential(
@@ -29,62 +29,62 @@ class AE(nn.Module):
             enresidualblock(256,256)
         )
         self.eblock23 = nn.Sequential(
-            nn.Conv2d(256,128,stride=1,kernel_size=1,padding=1,bias=True)
+            nn.Conv2d(256,128,stride=2,kernel_size=1,padding=1,bias=True)
         )
         self.eblock3 = nn.Sequential(
             enresidualblock(128,128)
         )        
         self.eblock34 = nn.Sequential(
-            nn.Conv2d(128,64,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.Conv2d(128,64,stride=2,kernel_size=3,padding=1,bias=True)
         )
         self.eblock4 = nn.Sequential(
             enresidualblock(64,64)
         )
         self.eblock45 = nn.Sequential(
-            nn.Conv2d(64,32,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.Conv2d(64,32,stride=2,kernel_size=3,padding=1,bias=True)
         )
         self.eblock5 = nn.Sequential(
             enresidualblock(32,32)
         )
         self.eblock56 = nn.Sequential(
-            nn.Conv2d(32,16,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.Conv2d(32,16,stride=2,kernel_size=3,padding=1,bias=True)
         )
         self.eblock6 = nn.Sequential(
             enresidualblock(16,16)
         )
         self.efc = nn.Sequential(
-            nn.Linear(fc_features,1)
+            nn.Linear(240,fc_features)
         )
         #=== Encoder Block ===
 
         #=== Decoder Block ===
         deresidualblock = self.DecoderResidualBlock
         self.dfc = nn.Sequential(
-            nn.Linear(1,fc_features)
+            nn.Linear(fc_features,240)
         )
         self.dblock6 = nn.Sequential(
             enresidualblock(16,16)
         )
         self.dblock65 = nn.Sequential(
-            nn.ConvTranspose2d(16,32,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(16,32,stride=2,kernel_size=3,padding=1,output_padding=(0,1),bias=True)
         )
         self.dblock5 = nn.Sequential(
             enresidualblock(32,32)
         )
         self.dblock54 = nn.Sequential(
-            nn.ConvTranspose2d(32,64,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(32,64,stride=2,kernel_size=3,padding=1,bias=True)
         )
         self.dblock4 = nn.Sequential(
             enresidualblock(64,64)
         )
         self.dblock43 = nn.Sequential(
-            nn.ConvTranspose2d(64,128,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(64,128,stride=2,kernel_size=3,padding=1,output_padding=(1,0),bias=True)
         )
         self.dblock3 = nn.Sequential(
             enresidualblock(128,128)
         )        
         self.dblock32= nn.Sequential(
-            nn.ConvTranspose2d(128,256,stride=1,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(128,256,stride=2,kernel_size=3,padding=1,bias=True)
         )
         self.dblock2 = nn.Sequential(
             enresidualblock(256,256)
@@ -92,7 +92,7 @@ class AE(nn.Module):
         self.dblock1 = nn.Sequential(
             nn.BatchNorm2d(256),
             nn.ReLU(True),
-            nn.ConvTranspose2d(256,5,stride=2,kernel_size=3,padding=3,bias=True)
+            nn.ConvTranspose2d(256,5,stride=2,kernel_size=3,padding=1,bias=True)
         )
         #=== Decoder Block ===
 
@@ -185,7 +185,8 @@ class AE(nn.Module):
         x = self.eblock6(x)
         # Fully Connected
         self.eshape = x.size()
-        x = x.view(-1)        
+        x = x.view(self.eshape[0],-1)
+        # print('reshape ',x.size())
         x = self.efc(x)
         # print('Fully Connected',x.size())
 
@@ -195,7 +196,7 @@ class AE(nn.Module):
         # Fully Connected
         x = self.dfc(x)
         # print('Fully Conneted',x.size())
-        x = x.view(self.eshape[0],self.eshape[1],self.eshape[2],self.eshape[3])
+        x = x.view(-1,self.eshape[1],self.eshape[2],self.eshape[3])
         # Block 4
         # print('dblock6 ',x.size())
         x = self.dblock6(x)
@@ -220,26 +221,48 @@ class AE(nn.Module):
         x = self.dblock1(x)
         # Fin
         # print('Final   ',x.size())
-        # exit()
+
         return x
 
-    def forward(self, input_list):
+    def calc_Ytilde_prd(self, inp):
+        
+        Xtilde = inp[:-1,:]
+        Ytilde = inp[1:,:]
 
-        # print('Process... ')
-        nsteps = len(input_list)
+        # least-square
+        A = torch.linalg.pinv(Ytilde)@ Xtilde
+        # l2_lambda = 10.0
+        # A = torch.linalg.pinv(torch.t(Xtilde)@Xtilde+l2_lambda)@torch.t(Ytilde)@Xtilde
 
-        # Encoder 
-        enout = []
-        for step in range(nsteps):
-            enout.append(self.encoderforward(input_list[step]))
+        # koopman
+        A_i = A
+        Ytilde_pred = torch.zeros( Ytilde.size() ).to('cuda')
+        
+        for i in range(Ytilde.size(0)):
+            Ytilde_pred_i = A_i @ Xtilde[0] # g(y_1) = A*g(x_1)
 
+            Ytilde_pred[i] = Ytilde_pred_i
+            A_i = A @ A
+
+        out = torch.cat((Xtilde, Ytilde_pred), axis =0)
+
+        return out
+
+    def forward(self, inp):
+
+        # Encoder
+        # print('Encoder')
+        enout = self.encoderforward(inp)
+
+        # least square
+        # print('Least square')
+        enout = self.calc_Ytilde_prd(enout)
+        
         # Decoder
-        deout = []
-        for step in range(nsteps):
-            deout.append(self.decoderforward(enout[step]))
+        # print('Decoder')
+        deout = self.decoderforward(enout)
 
         reconstructed = deout
-        # print('Finalze Process... \n')
 
         return reconstructed
 
@@ -270,19 +293,27 @@ class CustomLoss(nn.Module):
     def __init__(self):
         super(CustomLoss, self).__init__()
 
-    def forward(self, outputs, targets):
+    def forward(self, outputs, target):
 
-        nsteps = len(outputs)
+        ind_half = int(outputs.size(0)/2)
+       
+        X_out = outputs[:ind_half]
+        Y_out = outputs[ind_half:]
+
+        X_target = target[:ind_half]
+        Y_target = target[ind_half:]
+
+        nsteps = ind_half
         loss = 0.0
         
         # Frobenius
         for step in range(nsteps):
-            loss += torch.norm(outputs[step] - targets[step],p='fro')
+            Xhat_X = torch.norm( X_target[step] - X_out[step], p='fro')
+            Yhat_Y = torch.norm( Y_target[step] - Y_out[step], p='fro')
+            loss += Xhat_X + Yhat_Y
 
-        loss = loss / nsteps
-
+        loss = loss/(nsteps*5.0)
         # L1
-        
         # loss = np.mean(np.abs(outputs[:] - targets[:])/np.abs(targets[:]))
 
         return loss
@@ -376,7 +407,7 @@ class FlowDataset(torch.utils.data.Dataset):
     def __init__(self, ndim,jcuts,kcuts,lcuts,data,transform=None):
         self.transform = transform
         # Set data
-        self.data = self.set_X(ndim,jcuts,kcuts,lcuts,data)
+        self.data = self.set_Data(ndim,jcuts,kcuts,lcuts,data)
         _,_,nlabels = self.data.shape
         self.labels = np.arange(nlabels)
         
@@ -392,7 +423,6 @@ class FlowDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         if self.transform:
-
             out_data = self.transform(self.data).view(self.data_num,5,self.cjmax,self.clmax)[idx]
             out_label = self.labels[idx]
         else:
@@ -401,7 +431,7 @@ class FlowDataset(torch.utils.data.Dataset):
 
         return out_data, out_label
 
-    def set_X(self,ndim,jcuts,kcuts,lcuts,datas):
+    def set_Data(self,ndim,jcuts,kcuts,lcuts,datas):
         jst,jls,jint = jcuts
         kst,kls,kint = kcuts
         lst,lls,lint = lcuts
@@ -426,8 +456,4 @@ class FlowDataset(torch.utils.data.Dataset):
 
                 D[2,:,:] = 0.0
 
-        # Set X,Y
-        X = D[:,:,0:-1]
-        # Y = D[1::,:,:]
-
-        return X
+        return D

@@ -21,6 +21,7 @@ torch.backends.cudnn.deterministic = True
 setup = configparser.ConfigParser()
 setup.read('input.ini')
 epochs = int(setup['DeepLearning']['epochs'])
+batch_size = int(setup['DeepLearning']['batchsize'])
 learning_rate = float(setup['DeepLearning']['learning_rate'])
 optthresh = float(setup['DeepLearning']['optthresh'])
 target_loss  = float(setup['DeepLearning']['target_loss'])
@@ -57,6 +58,10 @@ transform = torchvision.transforms.Compose([
 
 train_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,transform)
 
+train_loader = torch.utils.data.DataLoader(
+    train_dataset, batch_size=batch_size,shuffle=None,drop_last=True
+)
+
 #  use gpu if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -66,64 +71,77 @@ model = AE().to(device)
 # model = Identity().to(device) # for debbug
 
 # create an optimizer object
+# optimizer = optim.AdamW(model.parameters(),\
+#                         lr=learning_rate,\
+#                         # eps=1e-6,\
+#                         # amsgrad=True,\
+#                         weight_decay=1.0e-3)
 optimizer = optim.Adam(model.parameters(),\
                        lr=learning_rate,\
                        eps=1e-3,\
                        amsgrad=True,\
-                       weight_decay=1.0e-6)
+                       weight_decay=1.0e-3)
+# optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9,weight_decay=1.0e1)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,\
                                                  mode='min',\
-                                                 factor=0.5, \
-                                                 patience=10,\
+                                                 factor=0.1, \
+                                                 patience=50,\
                                                  threshold=optthresh,\
                                                  threshold_mode='rel',\
                                                  cooldown=0, \
-                                                 min_lr=0,\
+                                                 min_lr=1.e-8,\
                                                  eps=1e-08,\
                                                  verbose=True )
+
+# scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda epoch: 0.95 ** epoch)
 
 # Frobenius norm loss
 criterion = CustomLoss()
 
 """We train our autoencoder for our specified number of epochs."""
 losses = []
+best_loss = 0.0
 for epoch in range(epochs):
     loss = 0
-    i = 0
-    batches_list = [batch[0].to(torch.float32).to('cuda') for batch in train_dataset]
+    for batch_features,_ in train_loader:
+        batch = batch_features.to(torch.float32).to('cuda')
 
-    # add new axis
-    for i in range(len(batches_list)):
-        batches_list[i] = batches_list[i][None] 
+        # reset the gradients back to zero
+        # PyTorch accumulates gradients on subsequent backward passes
+        optimizer.zero_grad()
 
-    # reset the gradients back to zero
-    # PyTorch accumulates gradients on subsequent backward passes
-    optimizer.zero_grad()
-        
-    # compute reconstructions
-    outputs = model(batches_list)
+        # compute reconstructions
+        output = model(batch)
 
-    # compute training reconstruction loss
-    train_loss = criterion(outputs, batches_list)
+        X_batch = batch[:-1]
+        Y_batch = batch[1:]
+        target  = torch.cat((X_batch,Y_batch),axis=0)
+
+        # compute training reconstruction loss
+        train_loss = criterion(output, target)
+ 
+        # compute accumulated gradients
+        train_loss.backward()
         
-    # compute accumulated gradients
-    train_loss.backward()
+        # perform parameter update based on current gradients
+        optimizer.step()
         
-    # perform parameter update based on current gradients
-    optimizer.step()
-        
-    # add the mini-batch training loss to epoch loss
-    loss = train_loss.item()
+        # add the mini-batch training loss to epoch loss
+        loss += train_loss.item()
+
+    # compute the epoch training loss
+    loss = loss / len(train_loader)
     losses.append(loss)
     # display the epoch training loss
     print("epoch : {}/{}, recon loss = {:.8f}\n".format(epoch + 1, epochs, loss))
-    if loss <= target_loss: break
+    if loss < best_loss:
+        """ Save models """ 
+        torch.save(model, './train_model')
+
+        if loss <= target_loss: break
 
     # compute the learning erros
     scheduler.step(loss)
-
-""" Save models """ 
-torch.save(model, './train_model')
 
 """ Output history """
 losses = np.array(losses)
