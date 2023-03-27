@@ -1,0 +1,607 @@
+ReadGrid ../Mimuwork/u4.0/grid/grid.00003 -U -1 -3D -O -r8
+CreateWindow -fix
+FullView 1 0 0 0 -0 -1 -0 0 0 1 9.43023 -2 0 0 0.25
+ConfigureWindow 1 156 180 512 512
+ConfigureWindow 1 156 180 512 512
+ViewDirection 1 -Y
+RangeMode ByHand
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+ContourFilledSurface K=1 -J 1 Jmax -K 1 Kmax -L 1 Lmax
+ContourRange 0.940000 1.020000
+%mkdir ./refpngs
+%import -window "postkun 1" ./refpngs/00095100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00095900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00095900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00096900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00096900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00097900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00097900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00098900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00098900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00099900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00099900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00100900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00100900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00101900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00101900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00102900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00102900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00103900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00103900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00104900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00104900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00105900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00105900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00106900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00106900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00107900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00107900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00108900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00108900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00109900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00109900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00110900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00110900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00111900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00111900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00112900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00112900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113800.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00113900 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00113900.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114000 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114000.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114100 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114100.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114200 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114200.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114300 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114300.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114400 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114400.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114500 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114500.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114600 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114600.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114700 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114700.png
+ReadFlow ../Mimuwork/u4.0/data/flow_z00003_00114800 -U -1 -3D -PLOT3D -O -r4
+Function pressure 
+%import -window "postkun 1" ./refpngs/00114800.png
