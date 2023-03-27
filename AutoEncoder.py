@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 import configparser
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.utils.data.sampler
 import torchvision
 import glob
 from readwritePLOT3D import checkheader, readgrid, writegrid, \
@@ -53,38 +55,38 @@ class AE(nn.Module):
             enresidualblock(16,16)
         )
         self.efc = nn.Sequential(
-            nn.Linear(240,fc_features)
+            nn.Linear(560,fc_features)
         )
         #=== Encoder Block ===
 
         #=== Decoder Block ===
         deresidualblock = self.DecoderResidualBlock
         self.dfc = nn.Sequential(
-            nn.Linear(fc_features,240)
+            nn.Linear(fc_features,560)
         )
         self.dblock6 = nn.Sequential(
             enresidualblock(16,16)
         )
         self.dblock65 = nn.Sequential(
-            nn.ConvTranspose2d(16,32,stride=2,kernel_size=3,padding=1,output_padding=(0,1),bias=True)
+            nn.ConvTranspose2d(16,32,stride=2,kernel_size=3,padding=1,output_padding=(0,0),bias=True)
         )
         self.dblock5 = nn.Sequential(
             enresidualblock(32,32)
         )
         self.dblock54 = nn.Sequential(
-            nn.ConvTranspose2d(32,64,stride=2,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(32,64,stride=2,kernel_size=3,padding=1,output_padding=(1,1),bias=True)
         )
         self.dblock4 = nn.Sequential(
             enresidualblock(64,64)
         )
         self.dblock43 = nn.Sequential(
-            nn.ConvTranspose2d(64,128,stride=2,kernel_size=3,padding=1,output_padding=(1,0),bias=True)
+            nn.ConvTranspose2d(64,128,stride=2,kernel_size=3,padding=1,output_padding=(0,1),bias=True)
         )
         self.dblock3 = nn.Sequential(
             enresidualblock(128,128)
         )        
         self.dblock32= nn.Sequential(
-            nn.ConvTranspose2d(128,256,stride=2,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(128,256,stride=2,kernel_size=3,padding=1,output_padding=(0,0),bias=True)
         )
         self.dblock2 = nn.Sequential(
             enresidualblock(256,256)
@@ -92,7 +94,7 @@ class AE(nn.Module):
         self.dblock1 = nn.Sequential(
             nn.BatchNorm2d(256),
             nn.ReLU(True),
-            nn.ConvTranspose2d(256,5,stride=2,kernel_size=3,padding=1,bias=True)
+            nn.ConvTranspose2d(256,5,stride=2,kernel_size=3,padding=1,output_padding=(0,0),bias=True)
         )
         #=== Decoder Block ===
 
@@ -164,15 +166,15 @@ class AE(nn.Module):
         # Block 1
         # print('eblock1 ',x.size())
         x = self.eblock1(x)
-        # Block 2
+        # Block 2 / 256*256
         # print('eblock2 ',x.size())
         x = self.eblock2(x)
         x = self.eblock23(x)
-        # Block 3
+        # Block 3 / 128*128
         # print('eblock3 ',x.size())
         x = self.eblock3(x)
         x = self.eblock34(x)
-        # Block 4
+        # Block 4 / 64*64
         # print('eblock4 ',x.size())
         x = self.eblock4(x)
         x = self.eblock45(x)
@@ -197,7 +199,7 @@ class AE(nn.Module):
         x = self.dfc(x)
         # print('Fully Conneted',x.size())
         x = x.view(-1,self.eshape[1],self.eshape[2],self.eshape[3])
-        # Block 4
+        # Block 6
         # print('dblock6 ',x.size())
         x = self.dblock6(x)
         x = self.dblock65(x)
@@ -221,30 +223,46 @@ class AE(nn.Module):
         x = self.dblock1(x)
         # Fin
         # print('Final   ',x.size())
-
+        # exit()
         return x
 
     def calc_Ytilde_prd(self, inp):
-        
+
         Xtilde = inp[:-1,:]
         Ytilde = inp[1:,:]
 
-        # least-square
-        A = torch.linalg.pinv(Ytilde)@ Xtilde
-        # l2_lambda = 10.0
-        # A = torch.linalg.pinv(torch.t(Xtilde)@Xtilde+l2_lambda)@torch.t(Ytilde)@Xtilde
+        half_ind = int(inp.size(0)/2)
 
+        # least-square
+        m,n = Xtilde[:half_ind,:].size(0),Xtilde.size(1)
+
+        l2_lambda = 1.e1
+        Xtil = Xtilde[:half_ind,:]
+        Ytil = Ytilde[:half_ind,:]
+        # print('Xtil = ',Xtil.size())
+        # if m < n:
+        #     A = torch.t(Xtil)@torch.linalg.pinv(( Xtil @ torch.t(Xtil) + l2_lambda )) @ Ytil
+        # else:
+        #     A = torch.linalg.pinv( torch.t(Xtil) @ Xtil + l2_lambda ) @ torch.t(Xtil) @ Ytil
+        A = torch.linalg.pinv(Xtil) @ Ytil 
+        # print('A = ',A.size())
         # koopman
         A_i = A
         Ytilde_pred = torch.zeros( Ytilde.size() ).to('cuda')
-        
+        Xtilde_0 = Xtilde[0,:]
+        Xtilde_0 = torch.unsqueeze(Xtilde_0, 0)
+        # print('Xtilde_0 = ', Xtilde_0.size())
+
         for i in range(Ytilde.size(0)):
-            Ytilde_pred_i = A_i @ Xtilde[0] # g(y_1) = A*g(x_1)
+            Ytilde_pred_i =  Xtilde_0 @ A_i 
+            # print('Ytilde_pred = ',Ytilde_pred_i.size())
+            Ytilde_pred[i,:] = Ytilde_pred_i
 
-            Ytilde_pred[i] = Ytilde_pred_i
             A_i = A @ A
-
-        out = torch.cat((Xtilde, Ytilde_pred), axis =0)
+        # print(Ytilde_pred.size())
+        # exit()
+        # out = torch.cat((Xtilde, Ytilde_pred), axis =0)
+        out = torch.cat((Xtilde, Ytilde), axis =0)
 
         return out
 
@@ -343,7 +361,7 @@ class DataIO(object):
         # Read flow files
         flows = []
         for step in self.nstepall:
-            fname = self.fpath+'flow_z{:0=2}_{:0=8}'.format(self.iz,step)
+            fname = self.fpath+'flow_z{:0=5}_{:0=8}'.format(self.iz,step)
             iheader = checkheader(fname)
             q,self.statedic = readflow(fname,iheader)
             flows.append(q)
@@ -388,7 +406,7 @@ class DataIO(object):
         ite1,ite2,jd,imove      = 0,0,0,0
         ibottom = cjs,cje,cks,cke,cls,cle,ite1,ite2,jd,imove
 
-        fdata = np.zeros([cjmax,1,clmax,5])
+        fdata = np.zeros([cjmax,ckmax,clmax,5])
 
         # reshape
         fdata[:,0,:,0] = q[0,:,:]
@@ -397,11 +415,15 @@ class DataIO(object):
         fdata[:,0,:,3] = q[3,:,:]
         fdata[:,0,:,4] = q[4,:,:]
 
+        for i in range(1,ckmax):
+            fdata[:,i,:,0] = fdata[:,0,:,0]
+            fdata[:,i,:,1] = fdata[:,0,:,1]
+            fdata[:,i,:,2] = fdata[:,0,:,2]
+            fdata[:,i,:,3] = fdata[:,0,:,3]
+            fdata[:,i,:,4] = fdata[:,0,:,4]
+
         # write flow files
-        try:
-            writeflow(fname,fdata,self.statedic,4)
-        except:
-            print("Check grid files header. (default = 4)")
+        writeflow(fname,fdata,self.statedic,4)
 
 class FlowDataset(torch.utils.data.Dataset):
     def __init__(self, ndim,jcuts,kcuts,lcuts,data,transform=None):
@@ -417,19 +439,19 @@ class FlowDataset(torch.utils.data.Dataset):
         # length of data
         self.data_num = nlabels
 
-
-    def __len__(self):
-        return self.data_num
-
     def __getitem__(self, idx):
         if self.transform:
             out_data = self.transform(self.data).view(self.data_num,5,self.cjmax,self.clmax)[idx]
             out_label = self.labels[idx]
         else:
-            out_data = self.data[idx]
+            out_data = self.data.view(self.data_num,5,self.cjmax,self.clmax)[idx]
             out_label =  self.labels[idx]
 
         return out_data, out_label
+
+    def __len__(self):
+        return self.data_num
+
 
     def set_Data(self,ndim,jcuts,kcuts,lcuts,datas):
         jst,jls,jint = jcuts
@@ -445,7 +467,7 @@ class FlowDataset(torch.utils.data.Dataset):
         if ndim == 2:
 
             D = np.zeros([5,self.cjmax*self.clmax,len(datas)])
-
+            print('Set D matrix ...')
             for i,data in enumerate(datas):
                 qc =  data[jst:jls:jint,0,lst:lls:lint,0:5].reshape(self.cjmax*self.clmax,5)
                 D[0,:,i] = qc[:,0] # rho
@@ -456,4 +478,45 @@ class FlowDataset(torch.utils.data.Dataset):
 
                 D[2,:,:] = 0.0
 
+            print('...... Finish \n')
         return D
+
+class SlidingSampler(torch.utils.data.Sampler):
+    def __init__(self,data,batch_size,sliding,shuffle=False):
+        self.data = data
+        self.batch_size = batch_size
+        self.sliding = sliding
+        self.indices = data[:][1]
+
+        self.batches_indices = []
+        max_index = max(self.indices) - 1
+        start_ind = 0
+        last_ind  = batch_size
+
+        while last_ind <= max_index:
+            self.batches_indices.append(list(np.arange(start_ind,last_ind)))
+            start_ind = start_ind + self.sliding
+            last_ind = start_ind + self.batch_size
+
+        if shuffle==True:
+            random.seed(0) # fix random number generator
+            random.shuffle(self.batches_indices)
+
+    def __iter__(self):
+
+        return iter(self.batches_indices)
+        
+    def __len__(self):
+        return self.batch_size
+
+    def calc_shift_scale(self):
+        input_last_indx = self.batches_indices[-1][-1]
+
+        all_input = self.data[:input_last_indx][0]
+
+        shift = torch.mean(all_input, (0,2,3)) # for each conservatives
+        scale = torch.std(all_input,(0,2,3)) # for each conservatives
+
+        return shift.to(torch.float32),scale.to(torch.float32)
+
+        

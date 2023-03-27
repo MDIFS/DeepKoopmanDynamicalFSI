@@ -1,0 +1,56 @@
+ReadGrid grid_z0001 -U -1 -3D -O -r4
+ReadFlow recflow_z03_???????? -U -1 -3D -PLOT3D -O -r4
+CreateWindow -fix
+ConfigureWindow 1 40 108 512 512
+ConfigureWindow 1 40 108 512 512
+ConfigureWindow 1 51 109 512 512
+ConfigureWindow 1 65 112 512 512
+ConfigureWindow 1 154 144 512 512
+ConfigureWindow 1 226 175 512 512
+ConfigureWindow 1 250 182 512 512
+ConfigureWindow 1 301 199 512 512
+ConfigureWindow 1 341 213 512 512
+ConfigureWindow 1 400 224 512 512
+ConfigureWindow 1 484 246 512 512
+ConfigureWindow 1 529 254 512 512
+ConfigureWindow 1 576 264 512 512
+ConfigureWindow 1 628 272 512 512
+ConfigureWindow 1 665 279 512 512
+ConfigureWindow 1 685 283 512 512
+ConfigureWindow 1 708 287 512 512
+ConfigureWindow 1 778 296 512 512
+ConfigureWindow 1 806 297 512 512
+ConfigureWindow 1 806 297 512 512
+ConfigureWindow 1 806 297 512 512
+ConfigureWindow 1 806 297 512 512
+CurrentTime 100
+Function pressure 
+ContourFilledSurface K=1 -J 1 Jmax -K 1 Kmax -L 1 Lmax
+ViewDirection 1 -Y
+Fit 1 -J 1 Jmax -K 1 Kmax -L 1 Lmax
+ContourRange 0.940000 1.020000
+ConfigureWindow 1 806 297 514 512
+ConfigureWindow 1 806 297 516 513
+ConfigureWindow 1 806 297 517 514
+ConfigureWindow 1 806 297 518 514
+ConfigureWindow 1 806 297 521 518
+ConfigureWindow 1 806 297 523 521
+ConfigureWindow 1 806 297 523 522
+ConfigureWindow 1 806 297 526 525
+ConfigureWindow 1 806 297 529 529
+ConfigureWindow 1 806 297 530 530
+ConfigureWindow 1 806 297 531 530
+ConfigureWindow 1 806 297 534 530
+ConfigureWindow 1 806 297 543 532
+ConfigureWindow 1 806 297 568 544
+ConfigureWindow 1 806 297 591 561
+ConfigureWindow 1 806 297 675 626
+ConfigureWindow 1 806 297 670 620
+ConfigureWindow 1 806 297 635 587
+ConfigureWindow 1 806 297 611 571
+ConfigureWindow 1 806 297 595 565
+ConfigureWindow 1 806 297 573 549
+ConfigureWindow 1 806 297 511 502
+ConfigureWindow 1 806 297 487 487
+ConfigureWindow 1 806 297 486 486
+CloseWindow 1 -im

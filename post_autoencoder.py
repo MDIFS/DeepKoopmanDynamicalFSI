@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import configparser
+import copy
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
-from AutoEncoder import AE,DataIO,FlowDataset
+from AutoEncoder import AE,DataIO,FlowDataset,SlidingSampler
 
 """Set our seed and other configurations for reproducibility."""
 seed = 42
@@ -24,6 +25,8 @@ learning_rate = float(setup['DeepLearning']['learning_rate'])
 optthresh = float(setup['DeepLearning']['optthresh'])
 target_loss  = float(setup['DeepLearning']['target_loss'])
 batch_size = int(setup['DeepLearning']['batchsize'])
+sliding = int(setup['DeepLearning']['sliding'])
+sliding = 1
 """We set the preference about the CFD"""
 dt  = float(setup['CFD']['dt'])
 mach= float(setup['CFD']['mach'])
@@ -45,7 +48,7 @@ js,je,ks,ke,ls,le,ite1,ite2,jd,imove = ibottom
 # cropped indices
 jcuts = [0,je+1  ,1]
 kcuts = [0,ke+1-2,1]
-lcuts = [0,le+1  ,1]
+lcuts = [0,le+1-60,1]
 
 flows  = dataio.readflow()
 
@@ -56,73 +59,80 @@ transform = torchvision.transforms.Compose([
 
 test_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,transform)
 
+sampler = SlidingSampler(test_dataset,batch_size,sliding)
+
 test_loader = torch.utils.data.DataLoader(
-    test_dataset,batch_size=batch_size,shuffle=None,drop_last=True
+    test_dataset,
+    sampler = sampler
 )
+
+for _,label in test_loader:
+    tmp = label
+
+maxstep = int( torch.max(tmp).item() )
+
 print('Start Testing\n')
 
 """ Load models """ 
-model = torch.load("train_model")
-
+model = torch.load("trained_model")
+batch = next(iter(test_loader))[0].to(torch.float32).to('cuda')
+batch = torch.squeeze(batch)
+reconstruction = [batch[0]]
+step = 0
 with torch.no_grad():
-    num_batches = 0
-    orgdatas = []
-    for test,_ in test_loader:
-        num_batches += 1
-        orgdatas.append(test)
+    for batch,_ in test_loader:
+        print('step = ', step)
+        step = step + 1
+        batch = batch.to(torch.float32).to('cuda')
+        batch = torch.squeeze(batch)
 
-    batch = orgdatas[0]
-    batch = batch.to(torch.float32).to('cuda')
-
-    reconstruction = []
-    for i in range(num_batches):
         out = model(batch)
         ind_half = int(out.size(0)/2)
+        X_tilde = out[:ind_half]
 
-        X_prd = out[:(ind_half+1)]
+        reconstruction.append(X_tilde[0].cpu())
 
-        reconstruction.append(X_prd)
-        batch = X_prd
+    # """ Calc recreated error """
+    # recerrors = []
+    # for i,Y_prd in enumerate(reconstruction):
 
-    """ Calc recreated error """
-    recerrors = []
-    for i,Y_prd in enumerate(reconstruction):
+    #     recdata = Y_prd.cpu().numpy()
+    #     orgdata = orgdatas[i].cpu().numpy() 
 
-        recdata = Y_prd.cpu().numpy()
-        orgdata = orgdatas[i].cpu().numpy() 
+    #     # data shape = (batch * channels * height * width)
+    #     error_norm = np.linalg.norm(recdata-orgdata,axis=1,ord=1)
+    #     org_norm = np.linalg.norm(orgdata,axis=1,ord=1)
 
-        # data shape = (batch * channels * height * width)
-        error_norm = np.linalg.norm(recdata-orgdata,axis=1,ord=1)
-        org_norm = np.linalg.norm(orgdata,axis=1,ord=1)
+    #     recerror = error_norm/org_norm
 
-        recerror = error_norm/org_norm
-
-        recerrors.append(recerror)
+    #     recerrors.append(recerror)
 
 
-    f = open('recerrors.pickle', 'wb')
-    pickle.dump(recerrors, f)
+    # f = open('recerrors.pickle', 'wb')
+    # pickle.dump(recerrors, f)
 
 """## Visualize Results
 Let's try to reconstruct some test images using our trained autoencoder.
 """
 print('Post')
 with torch.no_grad():
-    nstepall = np.arange(nst+nin,nls,nin)
+    nstepall = np.arange(nst,nls+nin,nin)
 
     # write grid
     out_gfiles = [
-        './grid_z0001'
+        './grid_z0003'
     ]
     dataio.writegrid(out_gfiles,grids,jcuts,kcuts,lcuts)
 
     # write flow
     statedic = []
 
-    for i in range(num_batches):
-        batches = reconstruction[i]
-        for step in range(batches.size(0)):
-            fname = 'recflows/recflow_z{:0=2}_{:0=8}'.format(iz,i*batches.size(0)+step)
-    
-            q  = batches[i].cpu().numpy()
-            dataio.writeflow(fname,q,jcuts,kcuts,lcuts)
+    for i,rec in enumerate(reconstruction):
+        batch = rec.cpu().numpy()
+
+        nstep = nstepall[i]
+        fname = 'recflows/u3.0/recflow_z{:0=2}_{:0=8}'.format(iz,nstep)
+
+        q = copy.deepcopy( batch )
+
+        dataio.writeflow(fname,q,jcuts,kcuts,lcuts)

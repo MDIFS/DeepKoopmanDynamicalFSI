@@ -9,11 +9,14 @@ import torch.optim as optim
 import torchvision
 
 from torchsummary import summary
-from AutoEncoder import AE,Identity,DataIO,FlowDataset,CustomLoss
+from AutoEncoder import AE,Identity,DataIO,FlowDataset,CustomLoss,SlidingSampler
 
 """Set our seed and other configurations for reproducibility."""
 seed = 42
 torch.manual_seed(seed)
+np.random.seed(seed)
+torch.cuda.manual_seed(seed)
+
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
@@ -23,8 +26,10 @@ setup.read('input.ini')
 epochs = int(setup['DeepLearning']['epochs'])
 batch_size = int(setup['DeepLearning']['batchsize'])
 learning_rate = float(setup['DeepLearning']['learning_rate'])
+learning_rate_ini = learning_rate 
 optthresh = float(setup['DeepLearning']['optthresh'])
 target_loss  = float(setup['DeepLearning']['target_loss'])
+sliding = int(setup['DeepLearning']['sliding'])
 
 """We set the preference about the CFD"""
 dt  = float(setup['CFD']['dt'])
@@ -47,7 +52,7 @@ js,je,ks,ke,ls,le,ite1,ite2,jd,imove = ibottom
 # cropped indices
 jcuts = [0,je+1  ,1] 
 kcuts = [0,ke+1-2,1]
-lcuts = [0,le+1  ,1]
+lcuts = [0,le+1-60,1]
 
 flows  = dataio.readflow()
 
@@ -58,8 +63,15 @@ transform = torchvision.transforms.Compose([
 
 train_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,transform)
 
+
+sampler = SlidingSampler(train_dataset,batch_size,sliding,shuffle=True)
+
+shift,scale = sampler.calc_shift_scale()
+
 train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=batch_size,shuffle=None,drop_last=True
+    train_dataset,
+    sampler = sampler,
+    num_workers = 2
 )
 
 #  use gpu if available
@@ -71,21 +83,21 @@ model = AE().to(device)
 # model = Identity().to(device) # for debbug
 
 # create an optimizer object
-# optimizer = optim.AdamW(model.parameters(),\
-#                         lr=learning_rate,\
-#                         # eps=1e-6,\
-#                         # amsgrad=True,\
-#                         weight_decay=1.0e-3)
-optimizer = optim.Adam(model.parameters(),\
-                       lr=learning_rate,\
-                       eps=1e-3,\
-                       amsgrad=True,\
-                       weight_decay=1.0e-3)
+optimizer = optim.AdamW(model.parameters(),\
+                        lr=learning_rate,\
+                        # eps=1e-6,\
+                        # amsgrad=True,\
+                        weight_decay=1.0e0)
+# optimizer = optim.Adam(model.parameters(),\
+#                        lr=learning_rate,\
+#                        # eps=1e-3,\
+#                        # amsgrad=True,\
+#                        weight_decay=1.0e-3)
 # optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9,weight_decay=1.0e1)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,\
                                                  mode='min',\
-                                                 factor=0.1, \
-                                                 patience=50,\
+                                                 factor=0.5, \
+                                                 patience=15,\
                                                  threshold=optthresh,\
                                                  threshold_mode='rel',\
                                                  cooldown=0, \
@@ -99,16 +111,24 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,\
 criterion = CustomLoss()
 
 """We train our autoencoder for our specified number of epochs."""
+count_decay = 0.0
 losses = []
-best_loss = 0.0
+old_loss = 0.0
+best_loss = 1.0e5
 for epoch in range(epochs):
     loss = 0
+
     for batch_features,_ in train_loader:
+        batch_features = torch.squeeze(batch_features)
         batch = batch_features.to(torch.float32).to('cuda')
 
         # reset the gradients back to zero
         # PyTorch accumulates gradients on subsequent backward passes
         optimizer.zero_grad()
+
+        # input normalization
+        for i in range(5):
+            batch[:,i,:,:] = (batch[:,i,:,:]-shift[i])/(scale[i]+1.0e-11)
 
         # compute reconstructions
         output = model(batch)
@@ -132,16 +152,26 @@ for epoch in range(epochs):
     # compute the epoch training loss
     loss = loss / len(train_loader)
     losses.append(loss)
-    # display the epoch training loss
-    print("epoch : {}/{}, recon loss = {:.8f}\n".format(epoch + 1, epochs, loss))
+
     if loss < best_loss:
         """ Save models """ 
-        torch.save(model, './train_model')
-
+        torch.save(model, './trained_model')
+        best_loss =  loss
         if loss <= target_loss: break
 
     # compute the learning erros
     scheduler.step(loss)
+    # if (old_loss - loss) < 0.01:
+    #     if epoch > 100:
+    #         decay_rate = 0.9
+    #         count_decay += 1
+    #         learning_rate = max(1.0e-9,learning_rate_ini*(decay_rate**count_decay))
+
+    old_loss = loss
+
+    # display the epoch training loss
+    print("epoch : {}/{}, train loss = {:.4f}\n".format(epoch + 1, epochs, loss))
+
 
 """ Output history """
 losses = np.array(losses)
