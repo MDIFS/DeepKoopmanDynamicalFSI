@@ -55,14 +55,14 @@ class AE(nn.Module):
             enresidualblock(16,16)
         )
         self.efc = nn.Sequential(
-            nn.Linear(560,fc_features)
+            nn.Linear(448,fc_features)
         )
         #=== Encoder Block ===
 
         #=== Decoder Block ===
         deresidualblock = self.DecoderResidualBlock
         self.dfc = nn.Sequential(
-            nn.Linear(fc_features,560)
+            nn.Linear(fc_features,448)
         )
         self.dblock6 = nn.Sequential(
             enresidualblock(16,16)
@@ -74,7 +74,7 @@ class AE(nn.Module):
             enresidualblock(32,32)
         )
         self.dblock54 = nn.Sequential(
-            nn.ConvTranspose2d(32,64,stride=2,kernel_size=3,padding=1,output_padding=(1,1),bias=True)
+            nn.ConvTranspose2d(32,64,stride=2,kernel_size=3,padding=1,output_padding=(1,0),bias=True)
         )
         self.dblock4 = nn.Sequential(
             enresidualblock(64,64)
@@ -228,41 +228,47 @@ class AE(nn.Module):
 
     def calc_Ytilde_prd(self, inp):
 
-        Xtilde = inp[:-1,:]
-        Ytilde = inp[1:,:]
-
+        Xtilde_tmp = inp[:-1,:]
+        Ytilde_tmp = inp[1:,:]
         half_ind = int(inp.size(0)/2)
+        
+        Xtilde = Xtilde_tmp[:half_ind,:]
+        Ytilde = Ytilde_tmp[:half_ind,:]
 
-        # least-square
-        m,n = Xtilde[:half_ind,:].size(0),Xtilde.size(1)
+        # least-square with regularization
+        m,n = Xtilde.size()
 
-        l2_lambda = 1.e1
-        Xtil = Xtilde[:half_ind,:]
-        Ytil = Ytilde[:half_ind,:]
-        # print('Xtil = ',Xtil.size())
-        # if m < n:
-        #     A = torch.t(Xtil)@torch.linalg.pinv(( Xtil @ torch.t(Xtil) + l2_lambda )) @ Ytil
-        # else:
-        #     A = torch.linalg.pinv( torch.t(Xtil) @ Xtil + l2_lambda ) @ torch.t(Xtil) @ Ytil
-        A = torch.linalg.pinv(Xtil) @ Ytil 
-        # print('A = ',A.size())
+        regression = 1.e0
+        l2_lambda = torch.tensor(regression)
+
+        # regulalized least-square
+        if m < n:
+            A = torch.t(Xtilde.double()) @ torch.linalg.pinv( Xtilde.double() @ torch.t(Xtilde.double()) + l2_lambda.double()) @ Ytilde.double()
+        else:
+            A = torch.linalg.pinv( torch.t(Xtilde.double()) @ Xtilde.double() + l2_lambda.double()) @ torch.t(Xtilde.double()) @ Ytilde.double()
+
+        # normal least-square
+        # A = torch.linalg.solve(Xtilde.to(torch.float32),Ytilde.to(torch.float32))
+
         # koopman
-        A_i = A
-        Ytilde_pred = torch.zeros( Ytilde.size() ).to('cuda')
-        Xtilde_0 = Xtilde[0,:]
-        Xtilde_0 = torch.unsqueeze(Xtilde_0, 0)
-        # print('Xtilde_0 = ', Xtilde_0.size())
+        Ytilde_pred = Xtilde.to(torch.float32) @ A.to(torch.float32)
 
-        for i in range(Ytilde.size(0)):
-            Ytilde_pred_i =  Xtilde_0 @ A_i 
-            # print('Ytilde_pred = ',Ytilde_pred_i.size())
-            Ytilde_pred[i,:] = Ytilde_pred_i
+        # recursive
+        # A_i = A
+        # Ytilde_pred = torch.zeros( Ytilde.size() ).to('cuda')
+        # Xtilde_0 = Xtilde[:,0]
+        # Xtilde_0 = torch.unsqueeze(Xtilde_0, 0)
+        # for i in range(Ytilde.size(0)):
+        #     Ytilde_pred_i =  Xtilde_0.to(torch.float32) @ A_i.to(torch.float32)
+        #     print(i,Ytilde_pred_i)
+        #     Ytilde_pred[i,:] = Ytilde_pred_i
+        #     Xtilde_0 = Ytilde_pred_i
 
-            A_i = A @ A
-        # print(Ytilde_pred.size())
-        # exit()
-        # out = torch.cat((Xtilde, Ytilde_pred), axis =0)
-        out = torch.cat((Xtilde, Ytilde), axis =0)
+        # out = torch.cat((Xtilde, Ytilde_pred), axis = 0).half()
+        out = torch.cat((Xtilde, Ytilde_pred), axis = 0)
+
+        # Without A-matrix
+        # out = torch.cat((Xtilde, Ytilde), axis =0)
 
         return out
 

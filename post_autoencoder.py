@@ -9,13 +9,20 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+from torch.cuda.amp import autocast, GradScaler
+
 from AutoEncoder import AE,DataIO,FlowDataset,SlidingSampler
 
 """Set our seed and other configurations for reproducibility."""
 seed = 42
 torch.manual_seed(seed)
+np.random.seed(seed)
+torch.cuda.manual_seed(seed)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
+
+""" Define GradScaler """
+scaler = GradScaler()  # point1: Scaling the gradient information
 
 """ read config file """
 setup = configparser.ConfigParser()
@@ -26,7 +33,7 @@ optthresh = float(setup['DeepLearning']['optthresh'])
 target_loss  = float(setup['DeepLearning']['target_loss'])
 batch_size = int(setup['DeepLearning']['batchsize'])
 sliding = int(setup['DeepLearning']['sliding'])
-sliding = 1
+
 """We set the preference about the CFD"""
 dt  = float(setup['CFD']['dt'])
 mach= float(setup['CFD']['mach'])
@@ -48,7 +55,7 @@ js,je,ks,ke,ls,le,ite1,ite2,jd,imove = ibottom
 # cropped indices
 jcuts = [0,je+1  ,1]
 kcuts = [0,ke+1-2,1]
-lcuts = [0,le+1-60,1]
+lcuts = [0,le+1-100,1]
 
 flows  = dataio.readflow()
 
@@ -66,8 +73,12 @@ test_loader = torch.utils.data.DataLoader(
     sampler = sampler
 )
 
-for _,label in test_loader:
+orgdatas = []
+for batch,label in test_loader:
+    test = batch[0][0]
     tmp = label
+    orgdatas.append(test)
+
 
 maxstep = int( torch.max(tmp).item() )
 
@@ -77,46 +88,60 @@ print('Start Testing\n')
 model = torch.load("trained_model")
 batch = next(iter(test_loader))[0].to(torch.float32).to('cuda')
 batch = torch.squeeze(batch)
-reconstruction = [batch[0]]
-step = 0
+reconstruction = []
+step = nst
 with torch.no_grad():
     for batch,_ in test_loader:
         print('step = ', step)
-        step = step + 1
+        step = step + nin*sliding
         batch = batch.to(torch.float32).to('cuda')
         batch = torch.squeeze(batch)
 
-        out = model(batch)
-        ind_half = int(out.size(0)/2)
-        X_tilde = out[:ind_half]
+        # standalized input batches
+        shift = torch.mean(batch,(0,2,3)).to(torch.float32)
+        scale = torch.std(batch,(0,2,3)).to(torch.float32)
+        for i in range(5):
+            batch[:,i,:,:] = (batch[:,i,:,:] - shift[i])/(scale[i]+1.0e-11)
+
+        # compute reconstructions using autocast
+        with autocast(False): # point 2 :automatic selection for precision of the model
+
+            out = model(batch)
+            ind_half = int(out.size(0)/2)
+            X_tilde = out[:ind_half]
+
+        # unstandalized
+        for i in range(5):
+            X_tilde[:,i,:,:] = X_tilde[:,i,:,:] * (scale[i]+1.0e-11) + shift[i]
 
         reconstruction.append(X_tilde[0].cpu())
 
     # """ Calc recreated error """
-    # recerrors = []
-    # for i,Y_prd in enumerate(reconstruction):
+    recerrors = []
+    for i,X_tilde in enumerate(reconstruction):
+        recdata = X_tilde.cpu().numpy()
+        orgdata = orgdatas[i].cpu().numpy() 
 
-    #     recdata = Y_prd.cpu().numpy()
-    #     orgdata = orgdatas[i].cpu().numpy() 
+        # data shape = (batch * channels * height * width)
+        # error_norm = np.linalg.norm(recdata-orgdata,axis=1,ord=1)
+        # org_norm = np.linalg.norm(orgdata,axis=1,ord=1)
 
-    #     # data shape = (batch * channels * height * width)
-    #     error_norm = np.linalg.norm(recdata-orgdata,axis=1,ord=1)
-    #     org_norm = np.linalg.norm(orgdata,axis=1,ord=1)
+        error_norm = np.linalg.norm(recdata-orgdata,axis=0,ord=1)
+        org_norm = np.linalg.norm(orgdata,axis=0,ord=1)
 
-    #     recerror = error_norm/org_norm
-
-    #     recerrors.append(recerror)
+        recerror = error_norm/(org_norm)
+        recerrors.append(recerror)
 
 
-    # f = open('recerrors.pickle', 'wb')
-    # pickle.dump(recerrors, f)
+    f = open('recerrors.pickle', 'wb')
+    pickle.dump(recerrors, f)
 
 """## Visualize Results
 Let's try to reconstruct some test images using our trained autoencoder.
 """
 print('Post')
 with torch.no_grad():
-    nstepall = np.arange(nst,nls+nin,nin)
+    nstepall = np.arange(nst,nls+nin,nin*sliding)
 
     # write grid
     out_gfiles = [

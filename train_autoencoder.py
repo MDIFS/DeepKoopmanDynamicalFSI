@@ -2,11 +2,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import configparser
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+from torch.cuda.amp import autocast, GradScaler
 
 from torchsummary import summary
 from AutoEncoder import AE,Identity,DataIO,FlowDataset,CustomLoss,SlidingSampler
@@ -52,7 +54,7 @@ js,je,ks,ke,ls,le,ite1,ite2,jd,imove = ibottom
 # cropped indices
 jcuts = [0,je+1  ,1] 
 kcuts = [0,ke+1-2,1]
-lcuts = [0,le+1-60,1]
+lcuts = [0,le+1-100,1]
 
 flows  = dataio.readflow()
 
@@ -70,8 +72,8 @@ shift,scale = sampler.calc_shift_scale()
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset,
-    sampler = sampler,
-    num_workers = 2
+    sampler = sampler#,
+#    num_workers = 2
 )
 
 #  use gpu if available
@@ -85,7 +87,7 @@ model = AE().to(device)
 # create an optimizer object
 optimizer = optim.AdamW(model.parameters(),\
                         lr=learning_rate,\
-                        # eps=1e-6,\
+                        # eps=1e-4,\
                         # amsgrad=True,\
                         weight_decay=1.0e0)
 # optimizer = optim.Adam(model.parameters(),\
@@ -97,11 +99,11 @@ optimizer = optim.AdamW(model.parameters(),\
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,\
                                                  mode='min',\
                                                  factor=0.5, \
-                                                 patience=15,\
+                                                 patience=0,\
                                                  threshold=optthresh,\
                                                  threshold_mode='rel',\
                                                  cooldown=0, \
-                                                 min_lr=1.e-8,\
+                                                 min_lr=1.e-9,\
                                                  eps=1e-08,\
                                                  verbose=True )
 
@@ -110,15 +112,19 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,\
 # Frobenius norm loss
 criterion = CustomLoss()
 
+""" Define GradScaler """
+scaler = GradScaler()  # point1: Scaling the gradient information
+
 """We train our autoencoder for our specified number of epochs."""
 count_decay = 0.0
 losses = []
 old_loss = 0.0
 best_loss = 1.0e5
+torch.autograd.set_detect_anomaly(True)
+
 for epoch in range(epochs):
     loss = 0
-
-    for batch_features,_ in train_loader:
+    for batch_features,label in train_loader:
         batch_features = torch.squeeze(batch_features)
         batch = batch_features.to(torch.float32).to('cuda')
 
@@ -126,28 +132,35 @@ for epoch in range(epochs):
         # PyTorch accumulates gradients on subsequent backward passes
         optimizer.zero_grad()
 
-        # input normalization
+        # standalization 
         for i in range(5):
             batch[:,i,:,:] = (batch[:,i,:,:]-shift[i])/(scale[i]+1.0e-11)
 
-        # compute reconstructions
-        output = model(batch)
+        # compute reconstructions using autocast
+        with autocast(False):   # point 2 : automatic selection for presicion of the model
+            output = model(batch)
 
-        X_batch = batch[:-1]
-        Y_batch = batch[1:]
-        target  = torch.cat((X_batch,Y_batch),axis=0)
+            X_batch = batch[:-1]
+            Y_batch = batch[1:]
+            target  = torch.cat((X_batch,Y_batch),axis=0)
 
-        # compute training reconstruction loss
-        train_loss = criterion(output, target)
+            # compute training reconstruction loss
+            train_loss = criterion(output, target)
  
         # compute accumulated gradients
-        train_loss.backward()
-        
+        scaler.scale(train_loss).backward()  # point3: using scaled backward function
+
         # perform parameter update based on current gradients
-        optimizer.step()
+        scaler.step(optimizer)  # point4: using scaler.step() altered optimizer.step()
         
+        # Update Scaler
+        scaler.update()  # point 5: update scaler
+
         # add the mini-batch training loss to epoch loss
         loss += train_loss.item()
+
+        del train_loss
+        torch.cuda.empty_cache()
 
     # compute the epoch training loss
     loss = loss / len(train_loader)
@@ -161,11 +174,6 @@ for epoch in range(epochs):
 
     # compute the learning erros
     scheduler.step(loss)
-    # if (old_loss - loss) < 0.01:
-    #     if epoch > 100:
-    #         decay_rate = 0.9
-    #         count_decay += 1
-    #         learning_rate = max(1.0e-9,learning_rate_ini*(decay_rate**count_decay))
 
     old_loss = loss
 
