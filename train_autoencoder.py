@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import configparser
+from distutils.util import strtobool
 from tqdm import tqdm
 
 import torch
@@ -25,6 +26,7 @@ torch.backends.cudnn.deterministic = True
 """ read config file """
 setup = configparser.ConfigParser()
 setup.read('input.ini')
+
 epochs = int(setup['DeepLearning']['epochs'])
 batch_size = int(setup['DeepLearning']['batchsize'])
 learning_rate = float(setup['DeepLearning']['learning_rate'])
@@ -32,6 +34,9 @@ learning_rate_ini = learning_rate
 optthresh = float(setup['DeepLearning']['optthresh'])
 target_loss  = float(setup['DeepLearning']['target_loss'])
 sliding = int(setup['DeepLearning']['sliding'])
+
+control = strtobool(setup['Control']['control'])
+inptype = int(setup['Control']['inptype'])
 
 """We set the preference about the CFD"""
 dt  = float(setup['CFD']['dt'])
@@ -46,7 +51,9 @@ nin = int(setup['CFD']['nin'])
 """ Dataset"""
 gpaths = setup['CFD']['gpaths']
 fpaths = setup['CFD']['fpaths']
-dataio = DataIO(nst,nls,nin,gpaths,fpaths,iz)
+fmpaths = setup['Control']['fmpaths']
+
+dataio = DataIO(nst,nls,nin,gpaths,fpaths,iz,fmpaths)
 
 grids,ibottom = dataio.readgrid()
 js,je,ks,ke,ls,le,ite1,ite2,jd,imove = ibottom
@@ -56,15 +63,17 @@ jcuts = [0,je+1  ,1]
 kcuts = [0,ke+1-2,1]
 lcuts = [0,le+1-100,1]
 
+# read flow
 flows  = dataio.readflow()
+control_inp = None
+if control: control_inp = dataio.readformom(inptype)
 
 # Set Tensor form
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor()
     ])
 
-train_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,transform)
-
+train_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,control_inp,control,transform)
 
 sampler = SlidingSampler(train_dataset,batch_size,sliding,shuffle=True)
 
@@ -99,15 +108,13 @@ optimizer = optim.AdamW(model.parameters(),\
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,\
                                                  mode='min',\
                                                  factor=0.5, \
-                                                 patience=0,\
+                                                 patience=1,\
                                                  threshold=optthresh,\
                                                  threshold_mode='rel',\
                                                  cooldown=0, \
                                                  min_lr=1.e-9,\
                                                  eps=1e-08,\
                                                  verbose=True )
-
-# scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda epoch: 0.95 ** epoch)
 
 # Frobenius norm loss
 criterion = CustomLoss()
@@ -124,9 +131,12 @@ torch.autograd.set_detect_anomaly(True)
 
 for epoch in range(epochs):
     loss = 0
-    for batch_features,label in train_loader:
-        batch_features = torch.squeeze(batch_features)
-        batch = batch_features.to(torch.float32).to('cuda')
+    # for batch_features,label,u in train_loader:
+    for features in train_loader:
+        batch = features[0]
+        batch = torch.squeeze(batch)
+        batch = batch.to(torch.float32).to('cuda')
+        if control: u = torch.squeeze(features[2]).to(torch.float32).to('cuda')
 
         # reset the gradients back to zero
         # PyTorch accumulates gradients on subsequent backward passes
@@ -138,7 +148,13 @@ for epoch in range(epochs):
 
         # compute reconstructions using autocast
         with autocast(False):   # point 2 : automatic selection for presicion of the model
-            output = model(batch)
+
+            if control:
+                inp = [batch,u]
+            else:
+                inp = [batch]
+
+            output = model(inp)
 
             X_batch = batch[:-1]
             Y_batch = batch[1:]
@@ -170,7 +186,9 @@ for epoch in range(epochs):
         """ Save models """ 
         torch.save(model, './trained_model')
         best_loss =  loss
-        if loss <= target_loss: break
+        if loss <= target_loss:
+            print('Loss reached tharget value')
+            break
 
     # compute the learning erros
     scheduler.step(loss)

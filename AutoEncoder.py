@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import configparser
+from distutils.util import strtobool
 
 import torch
 import torch.nn as nn
@@ -19,7 +20,11 @@ class AE(nn.Module):
         setup = configparser.ConfigParser()
         setup.read('input.ini')
         fc_features = int(setup['DeepLearning']['full_connected'])
-        
+        self.control     = strtobool(setup['Control']['control'])
+        if self.control: 
+            inptype = int(setup['Control']['inptype']) 
+            self.B  = self.build_Bmat(fc_features,inptype)
+
         #=== Encoder  ===
         enresidualblock = self.EncoderResidualBlock
         self.eblock1 = nn.Sequential(
@@ -226,10 +231,12 @@ class AE(nn.Module):
         # exit()
         return x
 
-    def calc_Ytilde_prd(self, inp):
-
+    def calc_Ytilde_prd(self,inp,u=0.0):
         Xtilde_tmp = inp[:-1,:]
         Ytilde_tmp = inp[1:,:]
+
+        if self.control:
+            Ytilde_tmp = Ytilde_tmp - u @ self.B
         half_ind = int(inp.size(0)/2)
         
         Xtilde = Xtilde_tmp[:half_ind,:]
@@ -238,7 +245,7 @@ class AE(nn.Module):
         # least-square with regularization
         m,n = Xtilde.size()
 
-        regression = 1.e0
+        regression = 1.e1
         l2_lambda = torch.tensor(regression)
 
         # regulalized least-square
@@ -266,13 +273,29 @@ class AE(nn.Module):
 
         # out = torch.cat((Xtilde, Ytilde_pred), axis = 0).half()
         out = torch.cat((Xtilde, Ytilde_pred), axis = 0)
-
+        
         # Without A-matrix
         # out = torch.cat((Xtilde, Ytilde), axis =0)
 
         return out
 
-    def forward(self, inp):
+    def build_Bmat(self,fc_features,inptype):
+        if inptype in [1,2,4,5,9]:
+            inpdim = 1
+        elif inptype in [6,7,8]:
+            inpdim = 2
+        elif inptype in [3]:
+            inpdim = 3
+        else:
+            print('inptype is wrong. change 1~9')
+            exit()
+
+        B = nn.Parameter( torch.full((inpdim, fc_features), fill_value=1.e-5))
+        return B
+        
+    def forward(self, inplist):
+        inp = inplist[0]
+        if self.control: u = inplist[1][1:]
 
         # Encoder
         # print('Encoder')
@@ -280,8 +303,11 @@ class AE(nn.Module):
 
         # least square
         # print('Least square')
-        enout = self.calc_Ytilde_prd(enout)
-        
+        if self.control:
+            enout = self.calc_Ytilde_prd(enout,u)
+        else:
+            enout = self.calc_Ytilde_prd(enout)
+
         # Decoder
         # print('Decoder')
         deout = self.decoderforward(enout)
@@ -343,7 +369,7 @@ class CustomLoss(nn.Module):
         return loss
 
 class DataIO(object):
-    def __init__(self,nst,nls,nin,gpaths,fpaths,iz):
+    def __init__(self,nst,nls,nin,gpaths,fpaths,iz,fmpaths=False):
         # Time steps
         self.nst, self.nls, self.nin = nst,nls,nin
         self.nstepall = np.arange(self.nst,self.nls,self.nin)
@@ -352,6 +378,7 @@ class DataIO(object):
         # Grid/Flow data
         self.gpaths = glob.glob(gpaths)
         self.fpath  = fpaths
+        self.fmpath = fmpaths
 
     def readgrid(self):
         # Read grid files
@@ -431,11 +458,52 @@ class DataIO(object):
         # write flow files
         writeflow(fname,fdata,self.statedic,4)
 
+    def readformom(self,inptype):
+        formoms = np.loadtxt(self.fmpath)
+        nsteps  = formoms[:,0]
+        nind    = [np.where(nsteps == nstep)[0][0] for nstep in self.nstepall] 
+        if len(nind) != len(self.nstepall):
+            print('nstep of formom does not match')
+            exit()
+
+        osciz = formoms[nind,1].reshape(1,-1)
+        dosciz = formoms[nind,2].reshape(1,-1)
+        ddosciz = formoms[nind,3].reshape(1,-1)
+        cl = formoms[nind,7].reshape(1,-1)
+
+        if inptype == 1:
+            u = osciz
+        elif inptype == 2:
+            u = np.diff(osciz,prepend=0.0)
+        elif inptype == 3:
+            u = np.vstack((np.vstack((osciz,dosciz)),ddosciz))
+        elif inptype == 4:
+            u = dosciz
+        elif inptype == 5:
+            u = ddosciz
+        elif inptype == 6:
+            u = np.vstack((osciz,dosciz))
+        elif inptype == 7:
+            u = np.vstack((dosciz,ddosciz))
+        elif inptype == 8:
+            u = np.vstack((osciz,ddosciz))
+        elif inptype == 9:
+            u = np.ones_like(self.ddosciz)
+
+        return u
+
 class FlowDataset(torch.utils.data.Dataset):
-    def __init__(self, ndim,jcuts,kcuts,lcuts,data,transform=None):
+    def __init__(self, ndim,jcuts,kcuts,lcuts,data,
+                 control_inp=None,control=False,transform=None):
+        self.control   = control
         self.transform = transform
         # Set data
         self.data = self.set_Data(ndim,jcuts,kcuts,lcuts,data)
+        
+        if self.control:
+            self.diminp = control_inp.shape[0]
+            self.control_inp = np.expand_dims(control_inp,axis=0)
+
         _,_,nlabels = self.data.shape
         self.labels = np.arange(nlabels)
         
@@ -445,19 +513,20 @@ class FlowDataset(torch.utils.data.Dataset):
         # length of data
         self.data_num = nlabels
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx,out_input=0.0):
         if self.transform:
             out_data = self.transform(self.data).view(self.data_num,5,self.cjmax,self.clmax)[idx]
             out_label = self.labels[idx]
+            if self.control:out_input = self.transform(self.control_inp).view(-1,self.diminp)[idx]
         else:
             out_data = self.data.view(self.data_num,5,self.cjmax,self.clmax)[idx]
             out_label =  self.labels[idx]
+            if self.control:out_input = self.control_inp.view(-1,self.diminp)[idx]
 
-        return out_data, out_label
+        return out_data, out_label, out_input
 
     def __len__(self):
         return self.data_num
-
 
     def set_Data(self,ndim,jcuts,kcuts,lcuts,datas):
         jst,jls,jint = jcuts

@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import configparser
 import copy
+from distutils.util import strtobool
 
 import torch
 import torch.nn as nn
@@ -34,6 +35,9 @@ target_loss  = float(setup['DeepLearning']['target_loss'])
 batch_size = int(setup['DeepLearning']['batchsize'])
 sliding = int(setup['DeepLearning']['sliding'])
 
+control = strtobool(setup['Control']['control'])
+inptype = int(setup['Control']['inptype'])
+
 """We set the preference about the CFD"""
 dt  = float(setup['CFD']['dt'])
 mach= float(setup['CFD']['mach'])
@@ -47,7 +51,9 @@ nin = int(setup['CFD']['nin'])
 """ Dataset """
 gpaths = setup['CFD']['gpaths']
 fpaths = setup['CFD']['fpaths']
-dataio = DataIO(nst,nls,nin,gpaths,fpaths,iz)
+fmpaths= setup['Control']['fmpaths']
+
+dataio = DataIO(nst,nls,nin,gpaths,fpaths,iz,fmpaths)
 
 grids,ibottom = dataio.readgrid()
 js,je,ks,ke,ls,le,ite1,ite2,jd,imove = ibottom
@@ -58,13 +64,15 @@ kcuts = [0,ke+1-2,1]
 lcuts = [0,le+1-100,1]
 
 flows  = dataio.readflow()
+control_inp = None
+if control: control_inp = dataio.readformom(inptype)
 
 # Set Tensor form
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor()
     ])
 
-test_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,transform)
+test_dataset = FlowDataset(2,jcuts,kcuts,lcuts,flows,control_inp,control,transform)
 
 sampler = SlidingSampler(test_dataset,batch_size,sliding)
 
@@ -74,7 +82,8 @@ test_loader = torch.utils.data.DataLoader(
 )
 
 orgdatas = []
-for batch,label in test_loader:
+
+for batch,label,u in test_loader:
     test = batch[0][0]
     tmp = label
     orgdatas.append(test)
@@ -91,11 +100,15 @@ batch = torch.squeeze(batch)
 reconstruction = []
 step = nst
 with torch.no_grad():
-    for batch,_ in test_loader:
+    # for batch,_ in test_loader:
+    for features in test_loader:
+        batch = features[0]
+        batch = torch.squeeze(batch)
+        batch = batch.to(torch.float32).to('cuda')
+        if control: u = torch.squeeze(features[2]).to(torch.float32).to('cuda')
+
         print('step = ', step)
         step = step + nin*sliding
-        batch = batch.to(torch.float32).to('cuda')
-        batch = torch.squeeze(batch)
 
         # standalized input batches
         shift = torch.mean(batch,(0,2,3)).to(torch.float32)
@@ -105,8 +118,13 @@ with torch.no_grad():
 
         # compute reconstructions using autocast
         with autocast(False): # point 2 :automatic selection for precision of the model
+            if control:
+                inp = [batch,u]
+            else:
+                inp = [batch]
 
-            out = model(batch)
+            out = model(inp)
+
             ind_half = int(out.size(0)/2)
             X_tilde = out[:ind_half]
 
