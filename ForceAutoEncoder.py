@@ -19,214 +19,121 @@ import cvxpy as cvx
 from readwritePLOT3D import checkheader, readgrid, writegrid, \
                                          readflow, writeflow
  
-class AE(nn.Module):
+class FAE(nn.Module):
     def __init__(self):
         super().__init__()
         setup = configparser.ConfigParser()
         setup.read('input.ini')
         fc_features = int(setup['DeepLearning']['full_connected'])
-        self.regression = float(setup['DeepLearning']['regression'])
+        window_size = int(setup['DeepLearning']['batchsize'])
+        self.regression = float(setup['DeepLearning_force']['regression'])
         self.control     = strtobool(setup['Control']['control'])
         if self.control: 
             inptype = int(setup['Control']['inptype']) 
-            self.B  = self.build_Bmat(fc_features,inptype)
+            self.Bf  = self.build_Bmat(fc_features,inptype)
 
         #=== Encoder  ===
-        enresidualblock = self.EncoderResidualBlock
         self.eblock1 = nn.Sequential(
-            nn.BatchNorm2d(5),
-            nn.ReLU(True),
-            nn.Conv2d(5,256,kernel_size=3,stride=2,padding=1,bias=True)
+            nn.Conv1d(1,256,kernel_size=3)
+
         )
         self.eblock2 = nn.Sequential(
-            enresidualblock(256,256)
-        )
-        self.eblock23 = nn.Sequential(
-            nn.Conv2d(256,128,stride=2,kernel_size=1,padding=1,bias=True)
+            nn.BatchNorm1d(256),
+            nn.ReLU(True),
+            nn.Conv1d(256,128,kernel_size=3)
         )
         self.eblock3 = nn.Sequential(
-            enresidualblock(128,128)
-        )        
-        self.eblock34 = nn.Sequential(
-            nn.Conv2d(128,64,stride=2,kernel_size=3,padding=1,bias=True)
+            nn.BatchNorm1d(128),
+            nn.ReLU(True),
+            nn.Conv1d(128,64,kernel_size=3)
         )
         self.eblock4 = nn.Sequential(
-            enresidualblock(64,64)
+            nn.ReLU(True),
+            nn.BatchNorm1d(64),
+            nn.Conv1d(64,32,kernel_size=3)
         )
-        self.eblock45 = nn.Sequential(
-            nn.Conv2d(64,32,stride=2,kernel_size=3,padding=1,bias=True)
-        )
-        self.eblock5 = nn.Sequential(
-            enresidualblock(32,32)
-        )
-        self.eblock56 = nn.Sequential(
-            nn.Conv2d(32,16,stride=2,kernel_size=3,padding=1,bias=True)
-        )
-        self.eblock6 = nn.Sequential(
-            enresidualblock(16,16)
-        )
+        # self.eblock5 = nn.Sequential(
+        #     nn.ReLU(True),
+        #     nn.BatchNorm1d(32),
+        #     nn.Conv1d(32,16,kernel_size=3)
+        # )
         self.efc = nn.Sequential(
-            nn.Linear(448,fc_features)
+            nn.Linear(800,window_size)
         )
         #=== Encoder Block ===
 
         #=== Decoder Block ===
-        deresidualblock = self.DecoderResidualBlock
         self.dfc = nn.Sequential(
-            nn.Linear(fc_features,448)
+            nn.Linear(fc_features,800)
         )
-        self.dblock6 = nn.Sequential(
-            enresidualblock(16,16)
-        )
-        self.dblock65 = nn.Sequential(
-            nn.ConvTranspose2d(16,32,stride=2,kernel_size=3,padding=1,output_padding=(0,0),bias=True)
-        )
-        self.dblock5 = nn.Sequential(
-            enresidualblock(32,32)
-        )
-        self.dblock54 = nn.Sequential(
-            nn.ConvTranspose2d(32,64,stride=2,kernel_size=3,padding=1,output_padding=(1,0),bias=True)
-        )
+        # self.dblock5 = nn.Sequential(
+        #     nn.BatchNorm1d(32),
+        #     nn.ReLU(True),
+        #     nn.ConvTranspose1d(32,64,kernel_size=5)
+        # )
         self.dblock4 = nn.Sequential(
-            enresidualblock(64,64)
-        )
-        self.dblock43 = nn.Sequential(
-            nn.ConvTranspose2d(64,128,stride=2,kernel_size=3,padding=1,output_padding=(0,1),bias=True)
+            nn.BatchNorm1d(32),
+            nn.ReLU(True),
+            nn.ConvTranspose1d(32,64,kernel_size=5)
         )
         self.dblock3 = nn.Sequential(
-            enresidualblock(128,128)
-        )        
-        self.dblock32= nn.Sequential(
-            nn.ConvTranspose2d(128,256,stride=2,kernel_size=3,padding=1,output_padding=(0,0),bias=True)
+            nn.ReLU(True),
+            nn.BatchNorm1d(64),
+            nn.ConvTranspose1d(64,128,kernel_size=5)
         )
         self.dblock2 = nn.Sequential(
-            enresidualblock(256,256)
+            nn.ReLU(True),
+            nn.BatchNorm1d(128),
+            nn.ConvTranspose1d(128,256,kernel_size=5)
         )
         self.dblock1 = nn.Sequential(
-            nn.BatchNorm2d(256),
+            nn.BatchNorm1d(256),
             nn.ReLU(True),
-            nn.ConvTranspose2d(256,5,stride=2,kernel_size=3,padding=1,output_padding=(0,0),bias=True)
+            nn.ConvTranspose1d(256,1,kernel_size=3)
         )
         #=== Decoder Block ===
 
-    class EncoderResidualBlock(nn.Module):
-        def __init__(self,in_features,out_features,stride=1,kernel_size=3,padding=1,bias=False):
-            super().__init__()
-            half_out_features = int(out_features/2)
-            self.cnn1 = nn.Sequential(
-                nn.BatchNorm2d(in_features),
-                nn.ReLU(True),
-                nn.Conv2d(in_features,half_out_features,1,stride,0,bias=True)
-            )
-            self.cnn2 = nn.Sequential(
-                nn.BatchNorm2d(half_out_features),
-                nn.ReLU(True),
-                nn.Conv2d(half_out_features,half_out_features,kernel_size,stride,padding,bias=True)
-            )
-            self.cnn3 = nn.Sequential(
-                nn.BatchNorm2d(half_out_features),
-                nn.ReLU(True),
-                nn.Conv2d(half_out_features,out_features,1,stride,0,bias=True)
-            )
-
-            self.shortcut = nn.Sequential(
-            )
-
-        def forward(self,x):
-            residual = x
-            x = self.cnn1(x)
-            x = self.cnn2(x)
-            x = self.cnn3(x)
-            x += self.shortcut(residual)
-
-            return x
-
-    class DecoderResidualBlock(nn.Module):
-        def __init__(self,in_features,out_features,stride=1,kernel_size=3,padding=1,bias=False):
-            super().__init__()
-            half_out_features = int(out_features/2)
-            self.cnn1 = nn.Sequential(
-                nn.BatchNorm2d(in_features),
-                nn.ReLU(True),
-                nn.Conv2d(in_features,half_out_features,1,stride,0,bias=True)
-            )
-            self.cnn2 = nn.Sequential(
-                nn.BatchNorm2d(half_out_features),
-                nn.ReLU(True),
-                nn.Conv2d(half_out_features,half_out_features,kernel_size,stride,padding,bias=True)
-            )
-            self.cnn3 = nn.Sequential(
-                nn.BatchNorm2d(half_out_features),
-                nn.ReLU(True),
-                nn.Conv2d(half_out_features,out_features,1,stride,0,bias=True)
-            )
-
-            self.shortcut = nn.Sequential(
-            )
-
-        def forward(self,x):
-            residual = x
-            x = self.cnn1(x)
-            x = self.cnn2(x)
-            x = self.cnn3(x)
-            x += self.shortcut(residual)
-
-            return x
 
     def encoderforward(self,x):
         # Block 1
         # print('eblock1 ',x.size())
         x = self.eblock1(x)
-        # Block 2 / 256*256
+        # Block 2
         # print('eblock2 ',x.size())
         x = self.eblock2(x)
-        x = self.eblock23(x)
-        # Block 3 / 128*128
+        # Block 3
         # print('eblock3 ',x.size())
         x = self.eblock3(x)
-        x = self.eblock34(x)
-        # Block 4 / 64*64
+        # Block 4
         # print('eblock4 ',x.size())
         x = self.eblock4(x)
-        x = self.eblock45(x)
         # Block 5
         # print('eblock5 ',x.size())
-        x = self.eblock5(x)
-        x = self.eblock56(x)
-        # Block 6
-        # print('eblock6 ',x.size())
-        x = self.eblock6(x)
+        # x = self.eblock5(x)
         # Fully Connected
-        self.eshape = x.size()
-        x = x.view(self.eshape[0],-1)
-        # print('reshape ',x.size())
+        x = x.view(1,-1)
+        # print('viewed',x.size())
         x = self.efc(x)
-        # print('Fully Connected',x.size())
 
         return x
 
     def decoderforward(self,x):
         # Fully Connected
+        # print('decoder :',x.size())
         x = self.dfc(x)
         # print('Fully Conneted',x.size())
-        x = x.view(-1,self.eshape[1],self.eshape[2],self.eshape[3])
-        # Block 6
-        # print('dblock6 ',x.size())
-        x = self.dblock6(x)
-        x = self.dblock65(x)
         # Block 5
         # print('dblock5 ',x.size())
-        x = self.dblock5(x)
+        # x = self.dblock5(x)
         # Block 4
-        x = self.dblock54(x)
+        x = x.view(32,-1)
+        x = x[None]
         # print('dblock4 ',x.size())
         x = self.dblock4(x)
         # Block 3
-        x = self.dblock43(x)
         # print('dblock3 ',x.size())
         x = self.dblock3(x)
         # Block 2
-        x = self.dblock32(x)
         # print('dblock2 ',x.size())
         x = self.dblock2(x)
         # Block 1
@@ -235,49 +142,68 @@ class AE(nn.Module):
         # Fin
         # print('Final   ',x.size())
         # exit()
+        x = torch.squeeze(x)
         return x
 
     def calc_Ytilde_prd(self,inp,u=0.0):
-        Xtilde_tmp = inp[:-1,:]
-        Ytilde_tmp = inp[1:,:]
+        # print('inp size=',inp.size())
+        inp    = torch.squeeze(inp)
+        Xtilde = inp[:-1]
+        Ytilde = inp[1:]
 
         if self.control:
-            Ytilde_tmp = Ytilde_tmp - u @ self.B
-        half_ind = int(inp.size(0)/2)
-        
-        Xtilde = Xtilde_tmp[:half_ind,:]
-        Ytilde = Ytilde_tmp[:half_ind,:]
+            Ytilde = Ytilde - u @ self.Bf
+
+        # add axis
+        Xtilde = Xtilde[None].T
+        Ytilde = Ytilde[None].T
 
         # least-square with regularization
         m,n = Xtilde.size()
-
         l2_lambda = torch.tensor(self.regression)
 
         # regulalized least-square
-        # A is transposed
+        # Af is transposed
+        # print('Xtilde',Xtilde)
+        # print('Ytilde',Ytilde)
         if m < n:
-            A = torch.t(Xtilde.double()) @ torch.linalg.pinv( Xtilde.double() @ torch.t(Xtilde.double()) + l2_lambda.double()) @ Ytilde.double()
+            # print('minimum norm =',m,n)
+            Af = torch.t(Xtilde.double()) @ torch.linalg.pinv( Xtilde.double() @ torch.t(Xtilde.double()) + l2_lambda.double()) @ Ytilde.double()
         else:
-            A = torch.linalg.pinv( torch.t(Xtilde.double()) @ Xtilde.double() + l2_lambda.double()) @ torch.t(Xtilde.double()) @ Ytilde.double()
-
+            # print('least square =',m,n)
+            Af = torch.linalg.pinv( torch.t(Xtilde.double()) @ Xtilde.double() + l2_lambda.double()) @ torch.t(Xtilde.double()) @ Ytilde.double()
+        
+        # normal least-square
+        # Af = torch.linalg.lstsq(Xtilde.to(torch.float32),Ytilde.to(torch.float32)).solution
         # koopman
-        # Ytilde_pred = Xtilde.to(torch.float32) @ A.to(torch.float32)
+        # Ytilde_pred = Xtilde.to(torch.float32) @ Af.to(torch.float32)
 
         # recursive
-        Ytilde_pred  = torch.zeros( Ytilde_tmp.size() ).to('cuda')
-        Ytilde_pred_i = Xtilde_tmp[:,0]
-        Ytilde_pred_i = torch.unsqueeze(Ytilde_pred_i, 0)
-        for i in range(Ytilde_tmp.size(0)):
-            Ytilde_pred_i =  Ytilde_pred_i.to(torch.float32) @ A.to(torch.float32)
-            Ytilde_pred[i,:] = Ytilde_pred_i
+        Ytilde_pred  = torch.zeros( Ytilde.size() ).to('cuda')
+        Ytilde_pred_i = Xtilde[0,0]
+        # print('Xtilde',Xtilde.size(),Xtilde[0,0])
+        # print('Af=',Af.size(),Af)
+        Af_i = Af.double()
+        # print('Ytilde=',Ytilde.size())
+        # print('Ytilde_pred=',Ytilde_pred.size())
+        for i in range(Ytilde.size(0)):
+            Ytilde_pred[i,0] = Ytilde_pred_i
+            Ytilde_pred_i =  Ytilde_pred_i.double() * Af_i
 
         # out = torch.cat((Xtilde, Ytilde_pred), axis = 0).half()
-        out = torch.cat((Xtilde_tmp, Ytilde_pred), axis = 0)
+        # out = torch.cat((Xtilde, Ytilde_pred), axis = 0)
 
+        out = torch.cat((Xtilde.T, Ytilde_pred.T), axis = 0)
+        # exit()
         # Without A-matrix
         # out = torch.cat((Xtilde, Ytilde), axis =0)
 
-        return out, A
+        # print('Af=',Af,Af.size(),'\n')
+        # print('Xtilde=',Xtilde,Xtilde.size(),'\n')
+        # print('Ytilde_pred=',Ytilde_pred,Ytilde_pred.size(),'\n')
+        # print('Ytilde=',Ytilde,Ytilde.size(),'\n')
+
+        return out, Af
 
     def build_Bmat(self,fc_features,inptype):
         if inptype in [1,2,4,5,9]:
@@ -296,7 +222,8 @@ class AE(nn.Module):
         
     def forward(self, inplist):
         inp = inplist[0]
-        if self.control: u = inplist[1][1:]
+
+        if self.control: u = inplist[1]
 
         # Encoder
         # print('Encoder')
@@ -312,7 +239,7 @@ class AE(nn.Module):
         # Decoder
         # print('Decoder')
         deout = self.decoderforward(enout)
-
+        
         reconstructed = deout
 
         return reconstructed
@@ -342,7 +269,7 @@ class AE(nn.Module):
 
     def encoder_forMPC(self, inplist):
         inp = inplist[0]
-        if self.control: u = inplist[1][1:]
+        if self.control: u = inplist[1]
 
         # Encoder
         # print('Encoder')
@@ -355,7 +282,7 @@ class AE(nn.Module):
         else:
             enout,A = self.calc_Ytilde_prd(enout)
 
-        return enout.T, A.T, self.B.T
+        return enout.T, A.T, self.Bf.T
 
 
 class Identity(nn.Module):
@@ -387,7 +314,7 @@ class CustomLoss(nn.Module):
     def forward(self, outputs, target):
 
         ind_half = int(outputs.size(0)/2)
-       
+
         X_out = outputs[:ind_half]
         Y_out = outputs[ind_half:]
 
@@ -403,7 +330,7 @@ class CustomLoss(nn.Module):
             Yhat_Y = torch.norm( Y_target[step] - Y_out[step], p='fro')
             loss += Xhat_X + Yhat_Y
 
-        loss = loss/(nsteps*5.0)
+        loss = loss/nsteps
 
         # L1
         # loss = np.mean(np.abs(outputs[:] - targets[:])/np.abs(targets[:]))
@@ -578,7 +505,9 @@ class DataIO(object):
         ddosciz = formoms[nind,3].reshape(1,-1)
         cl = formoms[nind,7].reshape(1,-1)
 
-        if inptype == 1:
+        if inptype == 0:
+            u = cl
+        elif inptype == 1:
             u = osciz
         elif inptype == 2:
             u = np.diff(osciz,prepend=0.0)
@@ -599,34 +528,58 @@ class DataIO(object):
 
         return u
 
-class FlowDataset(torch.utils.data.Dataset):
-    def __init__(self, ndim,jcuts,kcuts,lcuts,data,
+class ForceDataset(torch.utils.data.Dataset):
+    def __init__(self, ndim,jcuts,kcuts,lcuts,data,window_size,sliding,
                  control_inp=None,control=False,transform=None):
-        self.control   = control
-        self.transform = transform
-        # Set data
-        self.data = self.set_Data(ndim,jcuts,kcuts,lcuts,data)
-        
-        if self.control:
-            self.diminp = control_inp.shape[0]
-            self.control_inp = np.expand_dims(control_inp,axis=0)
 
-        _,_,nlabels = self.data.shape
-        self.labels = np.arange(nlabels)
-        
+        self.control   = control
+
+        self.transform = transform
+        # Set data/labels
+        self.data,self.labels = self.setdata(data,window_size,sliding)
+
+        if self.control:
+            control_tmp = control_inp[:,self.labels]
+            self.diminp = control_tmp.shape[0]
+            self.control_inp = np.expand_dims(control_tmp,axis=0)
+
+        # length of data
+        self.data_num = self.data.shape[2]
+
         # cast
         self.labels = torch.tensor(self.labels, dtype=torch.float32)
 
-        # length of data
-        self.data_num = nlabels
+    def setdata(self,data,window_size,sliding):
+        indices = []
+        labels = []
+        max_index = data.shape[1]
+        start_ind = 0
+        last_ind = window_size
+        
+        while last_ind <= max_index:
+            indices.append(list(np.arange(start_ind,last_ind)))
+            labels.append(start_ind)
+            start_ind = start_ind + sliding
+            last_ind = start_ind + window_size
+
+        inpdata_tmp = np.zeros((len(indices),1,window_size))
+
+        for i in range(len(indices)):
+            inpdata_tmp[:][i] = data[0][indices[i]]
+            
+        # rehsape (C H W) to (W H C)  
+        inpdata = inpdata_tmp.transpose(2,1,0)
+
+        print('... Finish \n')
+        return inpdata,labels
 
     def __getitem__(self, idx,out_input=0.0):
         if self.transform:
-            out_data = self.transform(self.data).view(self.data_num,5,self.cjmax,self.clmax)[idx]
+            out_data = self.transform(self.data)[idx].view(1,-1)
             out_label = self.labels[idx]
             if self.control:out_input = self.transform(self.control_inp).view(-1,self.diminp)[idx]
         else:
-            out_data = self.data.view(self.data_num,5,self.cjmax,self.clmax)[idx]
+            out_data = self.data.view(self.data_num,1,-1)[idx]
             out_label =  self.labels[idx]
             if self.control:out_input = self.control_inp.view(-1,self.diminp)[idx]
 
@@ -635,70 +588,39 @@ class FlowDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.data_num
 
-    def set_Data(self,ndim,jcuts,kcuts,lcuts,datas):
-        jst,jls,jint = jcuts
-        kst,kls,kint = kcuts
-        lst,lls,lint = lcuts
-
-        jmax,kmax,lmax,_ = datas[0].shape
-
-        self.cjmax = jls-jst-jint+1 # cropped jmax
-        self.ckmax = kls-kst-kint+1 # cropped kmax
-        self.clmax = lls-lst-lint+1 # cropped lmax
-
-        if ndim == 2:
-
-            D = np.zeros([5,self.cjmax*self.clmax,len(datas)])
-            print('Set D matrix ...')
-            for i,data in enumerate(datas):
-                qc =  data[jst:jls:jint,0,lst:lls:lint,0:5].reshape(self.cjmax*self.clmax,5)
-                D[0,:,i] = qc[:,0] # rho
-                D[1,:,i] = qc[:,1] # rho*u
-                D[2,:,i] = qc[:,2] # rho*v
-                D[3,:,i] = qc[:,3] # rho*w
-                D[4,:,i] = qc[:,4] # energy
-
-                D[2,:,:] = 0.0
-
-            print('... Finish \n')
-        return D
-
 
 class SlidingSampler(torch.utils.data.Sampler):
     def __init__(self,data,batch_size,sliding,shuffle=False):
         self.data = data
         self.batch_size = batch_size
         self.sliding = sliding
-        self.indices = data[:][1]
-
-        self.batches_indices = []
-        max_index = max(self.indices) - 1
-        start_ind = 0
-        last_ind  = batch_size
-
-        while last_ind <= max_index:
-            self.batches_indices.append(list(np.arange(start_ind,last_ind)))
-            start_ind = start_ind + self.sliding
-            last_ind = start_ind + self.batch_size
+        self.batches_indices = np.arange(data[:][1].size()[0])
 
         if shuffle==True:
             random.seed(1) # fix random number generator
             random.shuffle(self.batches_indices)
 
     def __iter__(self):
-
         return iter(self.batches_indices)
         
     def __len__(self):
         return self.batch_size
 
-    def calc_shift_scale(self):
-        all_input = self.data[:][0]
+    def calc_shift_scale(self,data):
+        all_input = data
 
-        shift = torch.mean(all_input, (0,2,3)) # for each conservatives
-        scale = torch.std(all_input,(0,2,3)) # for each conservatives
-
+        shift = torch.mean(all_input) # for each conservatives
+        scale = torch.std(all_input) # for each conservatives
+    
         return shift.to(torch.float32),scale.to(torch.float32)
+
+    def calc_min_max(self,data):
+        all_input = data
+
+        fmin = torch.min(all_input) # for each conservatives
+        fmax = torch.max(all_input) # for each conservatives
+    
+        return fmin.to(torch.float32),fmax.to(torch.float32)
 
         
 class FSI(object):
